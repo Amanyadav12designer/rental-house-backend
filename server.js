@@ -139,7 +139,7 @@ app.post("/api/properties", authMiddleware, (req, res) => {
   const newProperty = {
     ...req.body,
     id: Date.now().toString(),
-    favorite: false,
+    favorite: false,deleted:false
   };
 
   properties.push(newProperty);
@@ -149,14 +149,27 @@ app.post("/api/properties", authMiddleware, (req, res) => {
 });
 
 app.get("/api/properties", (req, res) => {
-  res.json(readProperties());
+  res.json(readProperties().filter(p => !p.deleted));
+  
 });
 
-app.delete("/api/properties/:id", authMiddleware, (req, res) => {
+app.get("/api/properties/deleted",authMiddleware, (req, res) => {
+res.json(readProperties().filter(p => p.deleted));
+
+})
+
+app.patch("/api/properties/:id/delete", authMiddleware, (req, res) => {
   let properties = readProperties();
-  properties = properties.filter(p => p.id !== req.params.id);
+  properties = properties.map(p=>p.id===req.params.id?{...p,deleted:true}:p);
   saveProperties(properties);
-  res.json({ message: "Deleted" });
+  res.json({ message: " Soft Deleted" });
+});
+
+app.patch("/api/properties/:id/restore", authMiddleware, (req, res) => {
+  let properties = readProperties();
+  properties = properties.map(p=>p.id===req.params.id?{...p,deleted:false}:p);
+  saveProperties(properties);
+  res.json({ message: "Restored" });
 });
 
 app.patch("/api/properties/:id/favorite", authMiddleware, (req, res) => {
@@ -168,6 +181,8 @@ app.patch("/api/properties/:id/favorite", authMiddleware, (req, res) => {
   res.json({ message: "Favorite toggled" });
 });
 
+
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-});
+}); 
