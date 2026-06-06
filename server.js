@@ -1,4 +1,4 @@
-console.log("🔥🔥🔥 TEST CHANGE 🔥🔥🔥");
+console.log("🚀 PORT CHECK:", process.env.PORT);
 
 const express = require("express");
 
@@ -18,8 +18,27 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected ✅"))
   .catch(err => console.log(err));
 
-// ---------------- MIDDLEWARE ----------------
-app.use(cors());
+
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// ✅ safer preflight handler
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
 app.use(express.json());
 
 // ---------------- MODELS ----------------
@@ -81,7 +100,7 @@ app.post("/api/login", async (req, res) => {
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "2h" }
+      { expiresIn: "36h" }
     );
 
     res.json({
@@ -152,6 +171,7 @@ app.get("/api/properties", async (req, res) => {
 
     res.json(formatted);
   } catch (err) {
+    console.log("❌ FETCH ERROR:", err); 
     res.status(500).json({ message: "Error fetching properties" });
   }
 });
